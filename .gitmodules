@@ -1,3 +1,6 @@
 [submodule "mmCoreAndDevices"]
 	path = mmCoreAndDevices
 	url = https://github.com/micro-manager/mmCoreAndDevices.git
+[submodule "plugins/DropletControl"]
+	path = plugins/DropletControl
+	url = https://github.com/Lars-Kool/DropletControl
