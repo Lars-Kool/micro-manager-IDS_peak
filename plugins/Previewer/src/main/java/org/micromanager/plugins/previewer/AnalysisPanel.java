@@ -1,6 +1,8 @@
 package org.micromanager.plugins.previewer;
 
+import java.beans.PropertyChangeListener;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Objects;
 import javax.swing.BorderFactory;
 import javax.swing.JPanel;
@@ -29,53 +31,7 @@ public class AnalysisPanel extends JPanel {
       addOptions();
       for (JPanel panel : panels) {
          this.add(panel, "wrap");
-         panel.addPropertyChangeListener(parent);
-      }
-   }
-
-   public void analyze(int[] src, int width, int height) {
-      switch (method) {
-         case THRESHOLD:
-            ImageAnalysis.threshold(src, ((IntegerOption) panels.get(0)).getValue(), true);
-            break;
-         case INVERT:
-            ImageAnalysis.invert(
-                  src,
-                  Objects.equals(((DropdownOption) panels.get(0)).getSelected(), "True"),
-                  true
-            );
-            break;
-         case FILL_GAPS:
-            ImageAnalysis.fillGaps(
-                  src,
-                  Objects.equals(((DropdownOption) panels.get(0)).getSelected(), "True"),
-                  width, height, true
-            );
-            break;
-         case DISTANCE_TRANSFORM:
-            ImageAnalysis.distanceTransform(
-                  src, width, height, true
-            );
-            break;
-         case WATERSHED:
-            ImageAnalysis.watershed(
-                  src, width, height,
-                  ((IntegerOption) panels.get(0)).getValue(),
-                  true
-            );
-            break;
-         case ADD_EDGES:
-            ImageAnalysis.addEdges(
-                  src,
-                  parent.getRawImg(((IntegerOption) panels.get(0)).getValue()).clone(),
-                  width, height,
-                  ((IntegerOption) panels.get(1)).getValue(),
-                  true
-            );
-            break;
-         default:
-            studio.getLogManager().logMessage("Image analysis algorithm not implemented.");
-            break;
+         panel.addPropertyChangeListener(parent.getFrame());
       }
    }
 
@@ -104,6 +60,16 @@ public class AnalysisPanel extends JPanel {
          default:
             studio.getLogManager().logMessage("Algorithm not implemented.");
       }
+   }
+
+   public HashMap<String, Object> getData() {
+      HashMap<String, Object> output = new HashMap<>();
+      output.put("Name", name);
+      for (JPanel panel : panels) {
+         OptionInterface temp = (OptionInterface) panel;
+         output.put(temp.getLabel(), temp.getValue());
+      }
+      return output;
    }
 
    private void addIntegerOption(String label, int defaultValue) {

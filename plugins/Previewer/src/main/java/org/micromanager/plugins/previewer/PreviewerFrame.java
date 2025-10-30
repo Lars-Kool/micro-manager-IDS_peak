@@ -6,6 +6,8 @@ import java.beans.PropertyChangeListener;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Objects;
 import javax.imageio.ImageIO;
 import javax.swing.JButton;
 import javax.swing.JFileChooser;
@@ -64,9 +66,8 @@ public class PreviewerFrame extends JFrame implements PropertyChangeListener {
          if (displayWindow == null) {
             displayWindow = studio.displays().createDisplay(datastore);
          }
-         panel.setImg(rawImage, width, height);
-         panel.analyze();
-         addImageToWindow(panel.getImg());
+         analyze();
+         addImageToWindow(imgs.get(panel.getDisplayIndex()));
       });
       imageButton = new JButton("Import image");
       imageButton.addActionListener(e -> {
@@ -78,9 +79,8 @@ public class PreviewerFrame extends JFrame implements PropertyChangeListener {
             displayWindow = studio.displays().createDisplay(datastore);
          }
          rawImage = bufferedImageToIntArray(img);
-         panel.setImg(rawImage, width, height);
-         panel.analyze();
-         addImageToWindow(panel.getImg());
+         analyze();
+         addImageToWindow(imgs.get(panel.getDisplayIndex()));
       });
 
       redraw();
@@ -176,24 +176,86 @@ public class PreviewerFrame extends JFrame implements PropertyChangeListener {
             if (rawImage == null) {
                return;
             }
-            panel.setImg(rawImage, width, height);
-            panel.analyze();
-            addImageToWindow(panel.getImg());
+            analyze();
+            addImageToWindow(imgs.get(panel.getDisplayIndex()));
             displayWindow.autostretch();
             break;
-         case "imageUpdated":
-            addImageToWindow(panel.getImg());
+         case "Analysis step":
+            addImageToWindow(imgs.get(panel.getDisplayIndex()));
             displayWindow.autostretch();
+            break;
+         case "ancestor":
             break;
          default:
+            if (rawImage == null) {
+               return;
+            }
+            analyze();
+            addImageToWindow(imgs.get(panel.getDisplayIndex()));
+            displayWindow.autostretch();
             break;
       }
    }
 
-   private void addImageToWindow(byte[] img) {
+   public void analyze() {
+      studio.getLogManager().logMessage("Analyze");
+      imgs = new ArrayList<>();
+      int[] src = rawImage.clone();
+      imgs.add(src.clone());
+
+      ArrayList<HashMap<String, Object>> data = panel.getData();
+      for (HashMap<String, Object> temp : data) {
+         executeMethod(src, width, height, temp);
+         imgs.add(src.clone());
+      }
+   }
+
+   private void executeMethod(int[] src, int width, int height, HashMap<String, Object> method) {
+      switch ((ImageAnalysis.Method) method.get("Method")) {
+         case THRESHOLD:
+            ImageAnalysis.threshold(src, (int) method.get("ThresholdValue"), true);
+            break;
+         case INVERT:
+            ImageAnalysis.invert(
+                  src, Objects.equals(method.get("ShouldInvert"),"True"), true
+            );
+            break;
+         case FILL_GAPS:
+            ImageAnalysis.fillGaps(
+                  src, Objects.equals(method.get("ShouldFillGaps"), "True"), width, height, true
+            );
+            break;
+         case DISTANCE_TRANSFORM:
+            ImageAnalysis.distanceTransform(
+                  src, width, height, true
+            );
+            break;
+         case WATERSHED:
+            ImageAnalysis.watershed(
+                  src, width, height,(Integer) method.get("MinimumDropletRadius"), true
+            );
+            break;
+         case ADD_EDGES:
+            ImageAnalysis.addEdges(
+                  src, imgs.get((Integer) method.get("EdgeImage")).clone(), width, height,
+                  (Integer) method.get("EdgeWidth"),
+                        true
+            );
+            break;
+         default:
+            studio.getLogManager().logMessage("Image analysis method: " +
+                  ((ImageAnalysis.Method) method.get("Method")).name() + " not implemented");
+      }
+   }
+
+   private void addImageToWindow(int[] img) {
+      byte[] temp = new byte[img.length];
+      for (int i = 0; i < img.length; i++) {
+         temp[i] = (byte) (img[i] & 0xFF);
+      }
       try {
          datastore.putImage(studio.data().createImage(
-               img,
+               temp,
                width,
                height,
                1, 1,
@@ -215,5 +277,9 @@ public class PreviewerFrame extends JFrame implements PropertyChangeListener {
       this.validate();
       this.repaint();
       this.pack();
+   }
+
+   public ArrayList<HashMap<String, Object>> getData() {
+      return panel.getData();
    }
 }

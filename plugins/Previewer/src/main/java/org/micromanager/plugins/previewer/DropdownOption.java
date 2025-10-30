@@ -8,14 +8,16 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import net.miginfocom.swing.MigLayout;
 
-public class DropdownOption extends JPanel {
+public class DropdownOption extends JPanel implements OptionInterface {
    private final JComboBox<String> comboBox;
    private String option;
    private final PropertyChangeSupport support;
+   private final String label;
 
    public DropdownOption(String label, String[] options) {
       this.setLayout(new MigLayout("insets 0"));
       support = new PropertyChangeSupport(this);
+      this.label = label;
 
       this.add(new JLabel(label));
       comboBox = new JComboBox<>(options);
@@ -46,5 +48,13 @@ public class DropdownOption extends JPanel {
 
    public int getSelectedIndex() {
       return comboBox.getSelectedIndex();
+   }
+
+   public String getLabel() {
+      return label;
+   }
+
+   public Object getValue() {
+      return comboBox.getSelectedItem();
    }
 }

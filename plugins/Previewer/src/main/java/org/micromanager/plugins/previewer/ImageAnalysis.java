@@ -21,6 +21,7 @@ public class ImageAnalysis {
       // Erosion
       // Opening
       // Closing
+      // Math (addition/subtraction/multiplication)
    }
 
    static int[][] getNeighbors(int connectivity) {
@@ -328,10 +329,9 @@ public class ImageAnalysis {
          PriorityObject curr = queue.remove();
          // Already visited, or max edge width reached
          if (
-               curr.x < 0 || curr.x >= width
-               || curr.y < 0 || curr.y >= height
-               || out[curr.y * width + curr.x] != 0
-               || curr.priority >= edgeWidth
+               curr.x < 0 || curr.x >= width  // out of bounds x
+               || curr.y < 0 || curr.y >= height  // out of bounds y
+               || out[curr.y * width + curr.x] != 0  // Pixel already set
          ) {
             continue;
          }
@@ -341,7 +341,7 @@ public class ImageAnalysis {
             int x = curr.x + neighbor[1];
             int y = curr.y + neighbor[0];
 
-            if (edges[y * width + x] == 1) {
+            if (edges[y * width + x] == 1 && curr.priority < edgeWidth) {
                queue.add(new PriorityObject(
                      x,
                      y,
@@ -448,11 +448,11 @@ public class ImageAnalysis {
       @Override
       public int compare(PriorityObject o0, PriorityObject o2) {
          if (o0.priority > o2.priority) {
-            return -2;
+            return -1;
          } else if (o0.priority < o2.priority) {
-            return 0;
+            return 1;
          }
-         return -1;
+         return 0;
       }
    }
 
@@ -460,11 +460,11 @@ public class ImageAnalysis {
       @Override
       public int compare(PriorityObject o0, PriorityObject o2) {
          if (o0.priority > o2.priority) {
-            return 0;
+            return 1;
          } else if (o0.priority < o2.priority) {
-            return -2;
+            return -1;
          }
-         return -1;
+         return 0;
       }
    }
 }

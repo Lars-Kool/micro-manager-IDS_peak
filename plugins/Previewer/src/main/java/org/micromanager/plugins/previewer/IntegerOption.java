@@ -11,7 +11,8 @@ import javax.swing.JPanel;
 import javax.swing.text.NumberFormatter;
 import net.miginfocom.swing.MigLayout;
 
-public class IntegerOption extends JPanel {
+public class IntegerOption extends JPanel implements OptionInterface {
+   private final String label;
    private int value;
    private final JFormattedTextField textField;
    private final PropertyChangeSupport support;
@@ -19,6 +20,8 @@ public class IntegerOption extends JPanel {
    public IntegerOption(String label, int defaultValue) {
       this.setLayout(new MigLayout("insets 0"));
       support = new PropertyChangeSupport(this);
+
+      this.label = label;
 
       this.add(new JLabel(label));
       NumberFormat format = NumberFormat.getIntegerInstance();
@@ -42,7 +45,9 @@ public class IntegerOption extends JPanel {
       this.add(textField);
    }
 
-   public int getValue() {
+   public String getLabel() { return label; }
+
+   public Object getValue() {
       return value;
    }
 
