@@ -15,8 +15,8 @@ import org.scijava.plugin.SciJavaPlugin;
 
 @Plugin(type = MenuPlugin.class)
 public class Previewer implements SciJavaPlugin, MenuPlugin {
-   private Studio studio_;
    PreviewerFrame frame_;
+   private Studio studio_;
 
    /**
     * This method receives the Studio object, which is the gateway to the
