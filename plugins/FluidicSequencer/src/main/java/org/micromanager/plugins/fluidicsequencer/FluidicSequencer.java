@@ -18,7 +18,7 @@ public class FluidicSequencer implements SciJavaPlugin, MenuPlugin {
    @Override
    public void onPluginSelected() {
       if (frame_ == null) {
-        // We have never before shown our GUI, so now we need to create it.
+         // We have never before shown our GUI, so now we need to create it.
          frame_ = new SequencerFrame(studio_);
       }
       frame_.setVisible(true);
