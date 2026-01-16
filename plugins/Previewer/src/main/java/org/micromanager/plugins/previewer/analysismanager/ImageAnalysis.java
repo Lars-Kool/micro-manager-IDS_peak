@@ -20,7 +20,7 @@ public class ImageAnalysis {
          Method.XOR
    ));
 
-   static int[][] getNeighbors(String connectivity) {
+   private static int[][] getNeighbors(String connectivity) {
       if (Objects.equals(connectivity, "8")) {
          return new int[][] {
                {1, 1}, {1, 0}, {1, -1},
@@ -36,7 +36,7 @@ public class ImageAnalysis {
       }
    }
 
-   static int[] threshold(int[] src, int thresholdValue, boolean inPlace) {
+   public static int[] threshold(int[] src, int thresholdValue, boolean inPlace) {
       int[] out = (inPlace) ? src : src.clone();
       for (int i = 0; i < out.length; i++) {
          out[i] = (out[i] >= thresholdValue) ? 1 : 0;
@@ -44,7 +44,7 @@ public class ImageAnalysis {
       return out;
    }
 
-   static int[] invert(int[] src, boolean inPlace) {
+   public static int[] invert(int[] src, boolean inPlace) {
       int[] out = (inPlace) ? src : src.clone();
       for (int i = 0; i < out.length; i++) {
          out[i] = 255 - out[i];
@@ -52,7 +52,7 @@ public class ImageAnalysis {
       return out;
    }
 
-   static int[] fillGaps(int[] src, int width, int height, boolean inPlace) {
+   public static int[] fillGaps(int[] src, int width, int height, boolean inPlace) {
       int[] out = (inPlace) ? src : src.clone();
       // Set all background pixels to temporary value (2)
       for (int i = 0; i < out.length; i++) {
@@ -129,7 +129,7 @@ public class ImageAnalysis {
       return out;
    }
 
-   static int[] distanceTransform(int[] src, int width, int height, boolean inPlace) {
+   public static int[] distanceTransform(int[] src, int width, int height, boolean inPlace) {
       int[] out = (inPlace) ? src : src.clone();
       ////////////////////// forward scan ////////////////////////
       // For top row, check only left, limit distance to 255
@@ -180,7 +180,7 @@ public class ImageAnalysis {
       return out;
    }
 
-   static PriorityQueue<PriorityObject> findPeaks(int[] src, int width, int height,
+   public static PriorityQueue<PriorityObject> findPeaks(int[] src, int width, int height,
                                                   int minDropletSize) {
       PriorityQueue<PriorityObject> peaks = new PriorityQueue<>(new SortDecreasing());
       for (int i = 2; i < height - 2; i++) {
@@ -243,7 +243,7 @@ public class ImageAnalysis {
       return out;
    }
 
-   static int[] watershed(int[] src, int width, int height, int minDropletSize,
+   public static int[] watershed(int[] src, int width, int height, int minDropletSize,
                           String connectivity, boolean inPlace) throws RuntimeException {
       int[] out = new int[src.length];
       PriorityQueue<PriorityObject> queue = findPeaks(src, width, height, minDropletSize);
@@ -284,7 +284,7 @@ public class ImageAnalysis {
       return out;
    }
 
-   static int[] addEdges(int[] src, int[] edges, int width, int height, int edgeWidth,
+   public static int[] addEdges(int[] src, int[] edges, int width, int height, int edgeWidth,
                          boolean inPlace) {
       int[] out = (inPlace) ? src : src.clone();
       int[][] neighbors = getNeighbors("8");
@@ -342,13 +342,12 @@ public class ImageAnalysis {
       return out;
    }
 
-   static int[] connectedComponent(int[] src, int width, int height, String connectivity,
+   public static int[] connectedComponent(int[] src, int width, int height, String connectivity,
                                    boolean inPlace) {
       int[] out = (inPlace) ? src : src.clone();
       int[][] neighbors = getNeighbors(connectivity);
 
       int id = 2;
-
       Queue<Integer> queue = new ArrayDeque<>();
       for (int i = 0; i < out.length; i++) {
          if (out[i] != 1) {
@@ -378,7 +377,7 @@ public class ImageAnalysis {
       return out;
    }
 
-   static int[] erode(int[] src, int width, int height, int sigma,
+   public static int[] erode(int[] src, int width, int height, int sigma,
                       String connectivity, boolean inPlace) {
       int[] out = (inPlace) ? src : src.clone();
       int[][] neighbors = getNeighbors(connectivity);
@@ -426,7 +425,7 @@ public class ImageAnalysis {
       return out;
    }
 
-   static int[] dilate(int[] src, int width, int height, int sigma, String connectivity,
+   public static int[] dilate(int[] src, int width, int height, int sigma, String connectivity,
                        boolean inPlace) {
       int[] out = (inPlace) ? src : src.clone();
       if (sigma <= 0) {
@@ -479,7 +478,7 @@ public class ImageAnalysis {
       return out;
    }
 
-   static int[] opening(int[] src, int width, int height, int sigma, String connectivity,
+   public static int[] opening(int[] src, int width, int height, int sigma, String connectivity,
                         boolean inPlace) {
       int[] out = (inPlace) ? src : src.clone();
       out = erode(out, width, height, sigma, connectivity, inPlace);
@@ -487,7 +486,7 @@ public class ImageAnalysis {
       return out;
    }
 
-   static int[] closing(int[] src, int width, int height, int sigma, String connectivity,
+   public static int[] closing(int[] src, int width, int height, int sigma, String connectivity,
                         boolean inPlace) {
       int[] out = (inPlace) ? src : src.clone();
       out = dilate(out, width, height, sigma, connectivity, inPlace);
@@ -526,7 +525,7 @@ public class ImageAnalysis {
       return out;
    }
 
-   static int[] meanFilter(int[] src, int width, int height, int sigma, boolean inPlace) {
+   public static int[] meanFilter(int[] src, int width, int height, int sigma, boolean inPlace) {
       int[] out = (inPlace) ? src : src.clone();
       out = meanFilterPass(out, width, height, sigma, inPlace);
       // Inverse width and height, as image is transposed!
@@ -569,7 +568,7 @@ public class ImageAnalysis {
       return output;
    }
 
-   static int[] gaussianFilter(int[] src, int width, int height, double sigma,
+   public static int[] gaussianFilter(int[] src, int width, int height, double sigma,
                                int cutoff, boolean inPlace) {
       int[] out = (inPlace) ? src : src.clone();
       double[] kernel = getGaussianKernel(sigma, cutoff);
@@ -579,7 +578,7 @@ public class ImageAnalysis {
       return out;
    }
 
-   static double[] getBinomialKernel(int sigma) {
+   public static double[] getBinomialKernel(int sigma) {
       double[] kernel = new double[2 * sigma + 1];
       kernel[0] = 1;
       for (int i = 0; i < 2 * sigma + 1; i++) {
@@ -590,7 +589,8 @@ public class ImageAnalysis {
       return kernel;
    }
 
-   static int[] binomialFilter(int[] src, int width, int height, int sigma, boolean inPlace) {
+   public static int[] binomialFilter(int[] src, int width, int height, int sigma,
+                                      boolean inPlace) {
       int[] out = (inPlace) ? src : src.clone();
       double[] kernel = getBinomialKernel(sigma);
       out = applyKernel(out, width, height, kernel, true);
@@ -599,7 +599,7 @@ public class ImageAnalysis {
       return out;
    }
 
-   static int[] medianFilter(int[] src, int width, int height, int sigma, boolean inPlace) {
+   public static int[] medianFilter(int[] src, int width, int height, int sigma, boolean inPlace) {
       int[] out = (inPlace) ? src : src.clone();
       int[] temp = src.clone();
 
@@ -617,7 +617,7 @@ public class ImageAnalysis {
       return out;
    }
 
-   static int[] normalize(int[] src, boolean inPlace) {
+   public static int[] normalize(int[] src, boolean inPlace) {
       int[] out = (inPlace) ? src : src.clone();
       int min = Integer.MAX_VALUE;
       int max = Integer.MIN_VALUE;
@@ -637,7 +637,7 @@ public class ImageAnalysis {
       return out;
    }
 
-   static int[] transpose(int[] src, int width, int height, boolean inPlace) {
+   public static int[] transpose(int[] src, int width, int height, boolean inPlace) {
       int[] out = (inPlace) ? src : src.clone();
       int[] temp = src.clone();
       for (int y = 0; y < height; y++) {
@@ -649,8 +649,8 @@ public class ImageAnalysis {
    }
 
    // Region indexes start with 2 (0 is reserved for background,
-   // 1 is reserved for foreground before segmenting)
-   private static int countRegions(int[] src) {
+   // 1 is reserved for foreground before segmenting
+   public static int countRegions(int[] src) {
       int maxVal = 0;
       for (int val : src) {
          maxVal = Math.max(val, maxVal);
@@ -659,7 +659,7 @@ public class ImageAnalysis {
    }
 
    // Binary methods
-   static int[] add(int[] src, int[] binImg, boolean inPlace) {
+   public static int[] add(int[] src, int[] binImg, boolean inPlace) {
       int[] out = (inPlace) ? src : src.clone();
       for (int i = 0; i < out.length; i++) {
          out[i] += binImg[i];
@@ -667,7 +667,7 @@ public class ImageAnalysis {
       return out;
    }
 
-   static int[] subtract(int[] src, int[] binImg, boolean inPlace) {
+   public static int[] subtract(int[] src, int[] binImg, boolean inPlace) {
       int[] out = (inPlace) ? src : src.clone();
       for (int i = 0; i < out.length; i++) {
          out[i] -= binImg[i];
@@ -675,7 +675,7 @@ public class ImageAnalysis {
       return out;
    }
 
-   static int[] and(int[] src, int[] mask, boolean inPlace) {
+   public static int[] and(int[] src, int[] mask, boolean inPlace) {
       int[] out = (inPlace) ? src : src.clone();
       for (int i = 0; i < out.length; i++) {
          out[i] &= mask[i];
@@ -683,7 +683,7 @@ public class ImageAnalysis {
       return out;
    }
 
-   static int[] or(int[] src, int[] mask, boolean inPlace) {
+   public static int[] or(int[] src, int[] mask, boolean inPlace) {
       int[] out = (inPlace) ? src : src.clone();
       for (int i = 0; i < out.length; i++) {
          out[i] |= mask[i];
@@ -691,7 +691,7 @@ public class ImageAnalysis {
       return out;
    }
 
-   static int[] xor(int[] src, int[] mask, boolean inPlace) {
+   public static int[] xor(int[] src, int[] mask, boolean inPlace) {
       int[] out = (inPlace) ? src : src.clone();
       for (int i = 0; i < out.length; i++) {
          out[i] ^= mask[i];
@@ -699,7 +699,7 @@ public class ImageAnalysis {
       return out;
    }
 
-   static double getAverageSize(int[] src, double minDropletSize) {
+   public static double getAverageSize(int[] src, double minDropletSize) {
       HashMap<Integer, Integer> counts = new HashMap<>();
       for (int val : src) {
          counts.put(val, counts.getOrDefault(val, 0) + 1);
