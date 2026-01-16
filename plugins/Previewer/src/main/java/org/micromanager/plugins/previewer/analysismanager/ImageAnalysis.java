@@ -5,6 +5,7 @@ import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.Objects;
 import java.util.PriorityQueue;
@@ -45,7 +46,6 @@ public class ImageAnalysis {
 
    static int[] invert(int[] src, boolean inPlace) {
       int[] out = (inPlace) ? src : src.clone();
-
       for (int i = 0; i < out.length; i++) {
          out[i] = 255 - out[i];
       }
@@ -54,7 +54,6 @@ public class ImageAnalysis {
 
    static int[] fillGaps(int[] src, int width, int height, boolean inPlace) {
       int[] out = (inPlace) ? src : src.clone();
-
       // Set all background pixels to temporary value (2)
       for (int i = 0; i < out.length; i++) {
          if (out[i] == 0) {
@@ -132,7 +131,6 @@ public class ImageAnalysis {
 
    static int[] distanceTransform(int[] src, int width, int height, boolean inPlace) {
       int[] out = (inPlace) ? src : src.clone();
-
       ////////////////////// forward scan ////////////////////////
       // For top row, check only left, limit distance to 255
       out[0] = (out[0] == 0) ? 0 : 1;
@@ -215,7 +213,7 @@ public class ImageAnalysis {
       }
 
       if (peaks.isEmpty()) {
-         return null;
+         return peaks;
       }
 
       // Local maxima are in priority queue, sorted in decreasing height
@@ -246,13 +244,9 @@ public class ImageAnalysis {
    }
 
    static int[] watershed(int[] src, int width, int height, int minDropletSize,
-                          String connectivity, boolean inPlace) {
+                          String connectivity, boolean inPlace) throws RuntimeException {
       int[] out = new int[src.length];
-
       PriorityQueue<PriorityObject> queue = findPeaks(src, width, height, minDropletSize);
-      if (queue == null) {
-         return new int[src.length];
-      }
 
       double[] sizes = new double[queue.size()];
       boolean[] isBulkDroplet = new boolean[queue.size()];
@@ -703,6 +697,26 @@ public class ImageAnalysis {
          out[i] ^= mask[i];
       }
       return out;
+   }
+
+   static double getAverageSize(int[] src, double minDropletSize) {
+      HashMap<Integer, Integer> counts = new HashMap<>();
+      for (int val : src) {
+         counts.put(val, counts.getOrDefault(val, 0) + 1);
+      }
+
+      double area_cumul = 0;
+      int particle_count = 0;
+      double minArea = Math.PI * minDropletSize * minDropletSize / 4;
+      for (int key : counts.keySet()) {
+         int val = counts.get(key);
+         if (key < 2) { continue; }
+         if (val < minArea) { continue; }
+
+         area_cumul += val;
+         particle_count += 1;
+      }
+      return (particle_count > 2) ? area_cumul / particle_count : 0;
    }
 
    public enum Method {

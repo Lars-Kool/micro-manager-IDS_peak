@@ -95,7 +95,7 @@ public class AnalysisStep {
    }
 
    public int[] executeStep(int[] src, int width, int height, boolean inPlace)
-         throws RuntimeException {
+         throws Exception {
       switch (method) {
          case THRESHOLD:
             return ImageAnalysis.threshold(src, (int) parameters.get(0).getValue(), inPlace);
