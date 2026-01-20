@@ -30,6 +30,7 @@ public class AnalysisStep {
                   AnalysisParameter.ParameterType.INTEGER, 0)
             );
             break;
+
          case WATERSHED:
             parameters.add(new AnalysisParameter("Minimum Droplet size",
                   AnalysisParameter.ParameterType.INTEGER, 1));
@@ -45,11 +46,13 @@ public class AnalysisStep {
             parameters.add(
                   new AnalysisParameter("Size", AnalysisParameter.ParameterType.INTEGER, 1)
             );
+         case CONNECTED_COMPONENT:
             parameters.add(
                   new AnalysisParameter("Connectivity", AnalysisParameter.ParameterType.ENUM, "8",
                         connectivityOptions)
             );
             break;
+
          case GAUSSIAN_FILTER:
             parameters.add(
                   new AnalysisParameter("Sigma", AnalysisParameter.ParameterType.FLOAT, 1)
@@ -108,6 +111,9 @@ public class AnalysisStep {
          case WATERSHED:
             return ImageAnalysis.watershed(src, width, height, (int) parameters.get(0).getValue(),
                   (String) parameters.get(1).getValue(), inPlace);
+         case CONNECTED_COMPONENT:
+            return ImageAnalysis.connectedComponent(src, width, height,
+                  (String) parameters.get(0).getValue(), inPlace);
          case ERODE:
             return ImageAnalysis.erode(src, width, height, (int) parameters.get(0).getValue(),
                   (String) parameters.get(1).getValue(), inPlace);

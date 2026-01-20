@@ -730,6 +730,8 @@ public class ImageAnalysis {
       DISTANCE_TRANSFORM,
       @SerializedName("Watershed")
       WATERSHED,
+      @SerializedName("ConnectedComponent")
+      CONNECTED_COMPONENT,
       @SerializedName("Erode")
       ERODE,
       @SerializedName("Dilate")
