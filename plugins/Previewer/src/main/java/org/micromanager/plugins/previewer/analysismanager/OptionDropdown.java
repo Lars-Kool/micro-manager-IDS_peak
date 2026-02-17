@@ -7,7 +7,6 @@ import javax.swing.JComboBox;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import net.miginfocom.swing.MigLayout;
-import org.micromanager.plugins.previewer.OptionInterface;
 
 public class OptionDropdown extends JPanel implements OptionInterface, PropertyChangeListener {
    private final JComboBox<String> comboBox;

@@ -1,4 +1,4 @@
-package org.micromanager.plugins.previewer;
+package org.micromanager.plugins.previewer.analysismanager;
 
 public interface OptionInterface {
    String getLabel();

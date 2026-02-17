@@ -11,7 +11,6 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.text.NumberFormatter;
 import net.miginfocom.swing.MigLayout;
-import org.micromanager.plugins.previewer.OptionInterface;
 
 public class OptionInteger extends JPanel implements OptionInterface, PropertyChangeListener {
    private final JFormattedTextField textField;
