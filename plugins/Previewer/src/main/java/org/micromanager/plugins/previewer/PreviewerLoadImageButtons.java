@@ -1,8 +1,6 @@
 package org.micromanager.plugins.previewer;
 
 import java.awt.image.BufferedImage;
-import java.beans.PropertyChangeListener;
-import java.beans.PropertyChangeSupport;
 import java.io.File;
 import java.io.IOException;
 import javax.imageio.ImageIO;
@@ -13,13 +11,13 @@ import javax.swing.filechooser.FileNameExtensionFilter;
 import mmcorej.DeviceType;
 import net.miginfocom.swing.MigLayout;
 import org.micromanager.Studio;
+import org.micromanager.plugins.previewer.analysismanager.ImageAnalysisEventHandler;
 
 public class PreviewerLoadImageButtons extends JPanel {
+   private final ImageAnalysisEventHandler eventHandler;
    private final Studio studio;
    private final JButton liveButton;
    private final JButton imageButton;
-
-   private final PropertyChangeSupport support;
 
    private int[] img;
    private int width;
@@ -28,8 +26,7 @@ public class PreviewerLoadImageButtons extends JPanel {
    public PreviewerLoadImageButtons(Studio studio) {
       this.studio = studio;
       this.setLayout(new MigLayout());
-
-      support = new PropertyChangeSupport(this);
+      this.eventHandler = ImageAnalysisEventHandler.getInstance();
 
       liveButton = new JButton("Refresh image");
       liveButton.addActionListener(e -> {
@@ -37,7 +34,7 @@ public class PreviewerLoadImageButtons extends JPanel {
          if (img == null) {
             return;
          }
-         support.firePropertyChange("New image loaded", null, img);
+         eventHandler.firePropertyChange("rawImage changed", this, null, null);
       });
       this.add(liveButton);
 
@@ -47,7 +44,7 @@ public class PreviewerLoadImageButtons extends JPanel {
          if (img == null) {
             return;
          }
-         support.firePropertyChange("New image loaded", null, img);
+         eventHandler.firePropertyChange("rawImage changed", this, null, null);
       });
       this.add(imageButton);
    }
@@ -62,14 +59,6 @@ public class PreviewerLoadImageButtons extends JPanel {
 
    public int getImgHeight() {
       return height;
-   }
-
-   public void addListener(PropertyChangeListener listener) {
-      support.addPropertyChangeListener(listener);
-   }
-
-   public void removeListener(PropertyChangeListener listener) {
-      support.removePropertyChangeListener(listener);
    }
 
    private void intArrayFromFile() {

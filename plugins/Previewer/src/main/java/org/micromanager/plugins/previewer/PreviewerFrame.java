@@ -8,8 +8,11 @@ import java.beans.PropertyChangeListener;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Objects;
 import java.util.concurrent.atomic.AtomicBoolean;
+import javax.swing.DefaultComboBoxModel;
 import javax.swing.JButton;
+import javax.swing.JComboBox;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JTextField;
@@ -21,20 +24,19 @@ import org.micromanager.display.DisplayWindow;
 import org.micromanager.internal.utils.WindowPositioning;
 import org.micromanager.plugins.previewer.analysismanager.AnalysisManager;
 import org.micromanager.plugins.previewer.analysismanager.AnalysisSequence;
+import org.micromanager.plugins.previewer.analysismanager.AnalysisStep;
+import org.micromanager.plugins.previewer.analysismanager.ImageAnalysisEventHandler;
+import org.micromanager.plugins.previewer.analysismanager.SequencePanel;
 
 public class PreviewerFrame extends JFrame implements PropertyChangeListener, Runnable {
-   private final Studio studio;
-   private final AnalysisManager analysisManager;
    private final Coords.Builder builder;
    private final RewritableDatastore datastore;
    private final AtomicBoolean isRunning;
-   private OptionDropdown analysisSelector;
-   private PreviewerPanel panel;
+   private final Studio studio;
+   private final AnalysisManager analysisManager;
+   private final ImageAnalysisEventHandler eventHandler;
+   private SequencePanel sequencePanel;
    private PreviewerLoadImageButtons buttonPanel;
-   private JButton newButton;
-   private JButton editButton;
-   private JLabel elapsedLabel;
-   private JTextField elapsedTextfield;
    private int[] rawImage;
    private ArrayList<int[]> imgs;
    private int width;
@@ -42,49 +44,49 @@ public class PreviewerFrame extends JFrame implements PropertyChangeListener, Ru
    private DisplayWindow displayWindow;
    private SequenceGeneratorFrame sequenceGeneratorFrame;
    private Thread analysisThread;
+   private AnalysisSequence currentSequence;
+   private JComboBox<String> sequenceSelector;
+   private JButton newButton;
+   private JButton editButton;
+   private JComboBox<String> stepSelector;
+   private JLabel elapsedLabel;
+   private JTextField elapsedTextfield;
 
    public PreviewerFrame(Studio studio) {
       this.setTitle("Image analysis previewer.");
       this.setLayout(new MigLayout());
       this.studio = studio;
+      this.eventHandler = ImageAnalysisEventHandler.getInstance();
+      eventHandler.addListener(this);
 
-      analysisManager = new AnalysisManager(studio);
-      analysisManager.addListener(this);
-      panel =
-            new PreviewerPanel(studio, this, analysisManager, analysisManager.getCurrentSequence());
+      analysisManager = AnalysisManager.getInstance(studio);
+      currentSequence = analysisManager.getSequence(0);
+      sequencePanel = new SequencePanel(currentSequence);
 
       datastore = studio.data().createRewritableRAMDatastore();
       builder = studio.data().coordsBuilder();
       isRunning = new AtomicBoolean(false);
 
       initializeFinalComponents();
-      updateSequenceNames();
+      createAnalysisSelector();
+      createStepSelector();
 
       this.addWindowListener(new WindowAdapter() {
          @Override
          public void windowClosing(WindowEvent e) {
-            analysisManager.saveToFile();
+            eventHandler.firePropertyChange("Closing", this, null, null);
             super.windowClosing(e);
          }
       });
 
-      redraw();
-      this.pack();
       super.setIconImage(Toolkit.getDefaultToolkit().getImage(
             getClass().getResource("/org/micromanager/icons/microscope.gif")));
       super.setLocation(100, 100);
       WindowPositioning.setUpLocationMemory(this, this.getClass(), null);
       this.studio.events().registerForEvents(this);
-   }
 
-   private void updateSequenceNames() {
-      String[] names = new String[analysisManager.size()];
-      int i = 0;
-      for (AnalysisSequence sequence : analysisManager.getSequences()) {
-         names[i] = sequence.sequenceName;
-         i++;
-      }
-      analysisSelector = new OptionDropdown("Analysis", names[0], names, this);
+      redraw();
+      this.pack();
    }
 
    private void initializeFinalComponents() {
@@ -101,7 +103,7 @@ public class PreviewerFrame extends JFrame implements PropertyChangeListener, Ru
             return;
          }
          sequenceGeneratorFrame = new SequenceGeneratorFrame(
-               analysisSelector.getSelectedIndex(),
+               sequenceSelector.getSelectedIndex(),
                analysisManager
          );
          sequenceGeneratorFrame.addWindowListener(new WindowAdapter() {
@@ -119,59 +121,79 @@ public class PreviewerFrame extends JFrame implements PropertyChangeListener, Ru
       elapsedTextfield.setColumns(8);
       elapsedTextfield.setEditable(false);
       buttonPanel = new PreviewerLoadImageButtons(studio);
-      buttonPanel.addListener(this);
    }
 
    @Override
    public void propertyChange(PropertyChangeEvent evt) {
       switch (evt.getPropertyName()) {
-         case "Analysis":
-            analysisManager.setCurrentSequence(analysisSelector.getSelectedIndex());
-            panel = new PreviewerPanel(studio, this, analysisManager,
-                  analysisManager.getCurrentSequence());
+         case "Sequence changed":
+            // No need to update if a non-active sequence is modified, an up-to-date version will
+            // be generated upon selection of that sequence
+            if (Objects.equals(evt.getSource(), currentSequence) && rawImage != null) {
+               analyze();
+               updateDisplayedImage();
+            }
+            break;
+         // TODO: make sure image is reanalyzed when current sequence is deleted
+         case "Sequence list changed":
+            String currentSequenceName = currentSequence.sequenceName;
+            createAnalysisSelector();
+            int idx =
+                  ((DefaultComboBoxModel<?>) sequenceSelector.getModel()).getIndexOf(
+                        currentSequenceName);
+            sequenceSelector.setSelectedIndex(idx);
+            redraw();
+            break;
+         case "sequenceSelector changed":
+            currentSequence = analysisManager.getSequence(sequenceSelector.getSelectedIndex());
+            sequencePanel = new SequencePanel(currentSequence);
+            createStepSelector();
             redraw();
 
-            if (rawImage == null) {
-               return;
+            if (rawImage != null) {
+               analyze();
+               updateDisplayedImage();
             }
-            analyze();
-            addImageToWindow(imgs.get(panel.getDisplayIndex()));
-            displayWindow.autostretch();
             break;
-         case "Analysis step":
-            if (rawImage == null) {
-               return;
+         case "stepSelector changed":
+            if (rawImage != null) {
+               updateDisplayedImage();
             }
-            addImageToWindow(imgs.get(panel.getDisplayIndex()));
-            displayWindow.autostretch();
             break;
-         case "New image loaded":
+         case "rawImage changed":
             rawImage = buttonPanel.getImg();
             width = buttonPanel.getImgWidth();
             height = buttonPanel.getImgHeight();
             analyze();
-            addImageToWindow(imgs.get(panel.getDisplayIndex()));
-            displayWindow.autostretch();
-            break;
-         case "AnalysisManager":
-            updateSequenceNames();
-            redraw();
-            break;
-         case "Parameter changed":
-            if (rawImage == null) {
-               return;
-            }
-            analyze();
-            addImageToWindow(imgs.get(panel.getDisplayIndex()));
-            displayWindow.autostretch();
+            updateDisplayedImage();
             break;
          default:
             break;
       }
    }
 
-   public void analyze() {
-      imgs = analysisManager.getImageStack(rawImage, width, height);
+   private void createAnalysisSelector() {
+      ArrayList<String> names = analysisManager.getSequenceNames();
+      sequenceSelector = new JComboBox<>(names.toArray(new String[0]));
+      sequenceSelector.addActionListener(e -> {
+         eventHandler.firePropertyChange("sequenceSelector changed", this, null, null);
+      });
+   }
+
+   private void createStepSelector() {
+      ArrayList<String> stepNames = new ArrayList<>();
+      stepNames.add("RAW");
+      for (AnalysisStep step : currentSequence.steps) {
+         stepNames.add(step.name);
+      }
+      stepSelector = new JComboBox<>(stepNames.toArray(new String[0]));
+      stepSelector.addActionListener(e -> {
+         eventHandler.firePropertyChange("stepSelector changed", this, null, null);
+      });
+   }
+
+   private void analyze() {
+      imgs = currentSequence.executeStack(rawImage, width, height);
       if (isRunning.get()) {
          isRunning.set(false);
       }
@@ -182,7 +204,7 @@ public class PreviewerFrame extends JFrame implements PropertyChangeListener, Ru
       analysisThread.start();
    }
 
-   private double timeSequence() {
+   private double timeAnalysis() {
       long count = 0;
       for (int i = 0; i < 10; i++) {
          if (!isRunning.get()) {
@@ -190,7 +212,7 @@ public class PreviewerFrame extends JFrame implements PropertyChangeListener, Ru
          }
          int[] src = rawImage.clone();
          Instant start = Instant.now();
-         analysisManager.analyze(src, width, height);
+         currentSequence.execute(src, width, height);
          Instant end = Instant.now();
          count += Duration.between(start, end).toNanos();
       }
@@ -200,15 +222,20 @@ public class PreviewerFrame extends JFrame implements PropertyChangeListener, Ru
    public void run() {
       isRunning.set(true);
       elapsedTextfield.setText("Running...");
-      double time = timeSequence();
+      double time = timeAnalysis();
       elapsedTextfield.setText(String.valueOf(time));
       isRunning.set(false);
    }
 
-   private void addImageToWindow(int[] img) {
+   private void updateDisplayedImage() {
       if (displayWindow == null) {
          displayWindow = studio.displays().createDisplay(datastore);
       }
+      if (!displayWindow.isVisible()) {
+         studio.getLogManager().logMessage("display invisible...");
+      }
+
+      int[] img = imgs.get(stepSelector.getSelectedIndex());
 
       byte[] temp = new byte[img.length];
       for (int i = 0; i < img.length; i++) {
@@ -225,16 +252,20 @@ public class PreviewerFrame extends JFrame implements PropertyChangeListener, Ru
          ));
       } catch (Exception e) {
          studio.getLogManager().logError(e, "Could not add image to display.");
+         return;
       }
+      displayWindow.autostretch();
    }
 
    private void redraw() {
       this.getContentPane().removeAll();
 
-      this.add(analysisSelector, "split");
+      this.add(sequenceSelector, "split");
       this.add(newButton, "split");
       this.add(editButton, "wrap");
-      this.add(panel, "wrap");
+      this.add(new JLabel("Visualize step"), "split");
+      this.add(stepSelector, "wrap");
+      this.add(sequencePanel, "wrap");
       this.add(elapsedLabel, "split");
       this.add(elapsedTextfield, "wrap");
       this.add(buttonPanel);

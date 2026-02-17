@@ -1,0 +1,160 @@
+[
+  {
+    "sequenceName": "Do nothing",
+    "steps": [],
+    "references": {}
+  },
+  {
+    "sequenceName": "Median",
+    "steps": [
+      {
+        "connectivityOptions": [
+          "4",
+          "8"
+        ],
+        "name": "MEDIAN_FILTER",
+        "method": "Median filter",
+        "parameters": [
+          {
+            "name": "Sigma",
+            "type": "INTEGER",
+            "value": 1
+          }
+        ],
+        "isBinary": false
+      }
+    ],
+    "references": {}
+  },
+  {
+    "sequenceName": "Binomial",
+    "steps": [
+      {
+        "connectivityOptions": [
+          "4",
+          "8"
+        ],
+        "name": "BINOMIAL_FILTER",
+        "method": "Binomial filter",
+        "parameters": [
+          {
+            "name": "Sigma",
+            "type": "INTEGER",
+            "value": 1
+          }
+        ],
+        "isBinary": false
+      }
+    ],
+    "references": {}
+  },
+  {
+    "sequenceName": "Mean",
+    "steps": [
+      {
+        "connectivityOptions": [
+          "4",
+          "8"
+        ],
+        "name": "MEAN_FILTER",
+        "method": "Mean filter",
+        "parameters": [
+          {
+            "name": "Sigma",
+            "type": "INTEGER",
+            "value": 1
+          }
+        ],
+        "isBinary": false
+      }
+    ],
+    "references": {}
+  },
+  {
+    "sequenceName": "Test",
+    "steps": [
+      {
+        "connectivityOptions": [
+          "4",
+          "8"
+        ],
+        "name": "MEAN_FILTER",
+        "method": "Mean filter",
+        "parameters": [
+          {
+            "name": "Sigma",
+            "type": "INTEGER",
+            "value": 5
+          }
+        ],
+        "isBinary": false
+      },
+      {
+        "connectivityOptions": [
+          "4",
+          "8"
+        ],
+        "name": "SUBTRACT",
+        "method": "Subtract",
+        "parameters": [
+          {
+            "name": "Image",
+            "type": "INTEGER",
+            "value": 0
+          },
+          {
+            "name": "Reverse",
+            "type": "ENUM",
+            "value": "False",
+            "options": [
+              "False",
+              "True"
+            ]
+          }
+        ],
+        "isBinary": true
+      },
+      {
+        "connectivityOptions": [
+          "4",
+          "8"
+        ],
+        "name": "NORMALIZE",
+        "method": "Normalize",
+        "parameters": [],
+        "isBinary": false
+      },
+      {
+        "connectivityOptions": [
+          "4",
+          "8"
+        ],
+        "name": "INVERT",
+        "method": "Invert",
+        "parameters": [],
+        "isBinary": false
+      },
+      {
+        "connectivityOptions": [
+          "4",
+          "8"
+        ],
+        "name": "THRESHOLD",
+        "method": "Threshold",
+        "parameters": [
+          {
+            "name": "ThresholdValue",
+            "type": "INTEGER",
+            "value": 0
+          }
+        ],
+        "isBinary": false
+      }
+    ],
+    "references": {
+      "0": [
+        1
+      ]
+    }
+  }
+]

@@ -1,0 +1,84 @@
+package org.micromanager.plugins.previewer.analysismanager;
+
+import java.awt.event.KeyAdapter;
+import java.awt.event.KeyEvent;
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
+import java.text.NumberFormat;
+import java.util.Objects;
+import javax.swing.JFormattedTextField;
+import javax.swing.JLabel;
+import javax.swing.JPanel;
+import javax.swing.text.NumberFormatter;
+import net.miginfocom.swing.MigLayout;
+import org.micromanager.plugins.previewer.OptionInterface;
+
+public class OptionInteger extends JPanel implements OptionInterface, PropertyChangeListener {
+   private final JFormattedTextField textField;
+   private final AnalysisParameter parameter;
+
+   /**
+    * Constructor for OptionInteger. OptionInteger is a JPanel that contains a
+    * JFormattedTextField that formats the user input into an Integer.
+    *
+    * @param parameter
+    */
+   public OptionInteger(AnalysisParameter parameter) {
+      this.setLayout(new MigLayout("insets 0"));
+      this.parameter = parameter;
+      ImageAnalysisEventHandler.getInstance().addListener(this);
+
+      this.add(new JLabel(parameter.getName()));
+      NumberFormat format = NumberFormat.getIntegerInstance();
+      NumberFormatter formatter = new NumberFormatter(format);
+      formatter.setMinimum(0);
+      formatter.setMaximum(255);
+
+      textField = new JFormattedTextField(formatter);
+      textField.setValue(parameter.getValue());
+      textField.setColumns(5);
+      textField.addKeyListener(new KeyAdapter() {
+         public void keyPressed(KeyEvent e) {
+            if (e.getKeyCode() == KeyEvent.VK_ENTER) {
+               int newValue = Integer.parseInt(textField.getText());
+               parameter.setValue(newValue);
+            }
+         }
+      });
+      this.add(textField);
+   }
+
+   /**
+    * Getter of the parameter label
+    *
+    * @return String label of parameter
+    */
+   public String getLabel() {
+      return parameter.getName();
+   }
+
+   /**
+    * Getter of the value of the selected item. This will be an Integer, but to keep universality
+    * in the OptionInterface, the String will be returned as Object.
+    *
+    * @return Value of the selected item
+    */
+   public Object getValue() {
+      return parameter.getValue();
+   }
+
+   /**
+    * ImageAnalysisEventHandler calls this method when an event is fired.
+    *
+    * @param evt A PropertyChangeEvent object describing the event source
+    *            and the property that has changed.
+    */
+   @Override
+   public void propertyChange(PropertyChangeEvent evt) {
+      if (!Objects.equals(evt.getPropertyName(), "Parameter changed")
+            || !Objects.equals(this, evt.getSource())) {
+         return;
+      }
+      textField.setValue(evt.getNewValue());
+   }
+}

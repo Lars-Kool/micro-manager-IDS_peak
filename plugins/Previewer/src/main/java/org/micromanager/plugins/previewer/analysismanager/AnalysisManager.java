@@ -2,81 +2,109 @@ package org.micromanager.plugins.previewer.analysismanager;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
-import java.beans.PropertyChangeSupport;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashSet;
 import java.util.Objects;
 import java.util.Scanner;
 import org.micromanager.LogManager;
 import org.micromanager.Studio;
 
-public class AnalysisManager {
-   private final HashSet<String> sequenceNames;
+/**
+ * Singleton class of manager for Image Analysis
+ */
+public class AnalysisManager implements PropertyChangeListener {
+   private static AnalysisManager INSTANCE;
+   private final ImageAnalysisEventHandler eventHandler;
+
+   private final ArrayList<String> sequenceNames;
    private final Gson gson;
    private final Studio studio;
    private final LogManager logManager;
-   private final PropertyChangeSupport support;
    private ArrayList<AnalysisSequence> sequences;
-   private AnalysisSequence currentSequence;
 
-   public AnalysisManager(Studio studio) {
+   /**
+    * Private constructor
+    *
+    * @param studio Micro-Manager Studio instance
+    */
+   private AnalysisManager(Studio studio) {
       this.studio = studio;
       logManager = studio.getLogManager();
       gson = new GsonBuilder()
             .setPrettyPrinting()
             .create();
-      support = new PropertyChangeSupport(this);
-
       sequences = new ArrayList<>();
       sequences = loadFromFile("AnalysisSequences.json");
       if (sequences == null) {
-         sequences = generateEmptySequence();
+         generateEmptySequence();
       }
       verifyParameters();
       sequenceNames = getSequenceNames();
-      currentSequence = sequences.get(0);
+
+      eventHandler = ImageAnalysisEventHandler.getInstance();
    }
 
-   public void addListener(PropertyChangeListener listener) {
-      support.addPropertyChangeListener(listener);
+   /**
+    * Getter of AnalysisManager instance.
+    *
+    * @param studio Micro-Manager Studio instance
+    *
+    * @return AnalysisManager instance
+    */
+   public static AnalysisManager getInstance(Studio studio) {
+      if (INSTANCE == null) {
+         INSTANCE = new AnalysisManager(studio);
+      }
+      return INSTANCE;
    }
 
-   public void removeListener(PropertyChangeListener listener) {
-      support.removePropertyChangeListener(listener);
+   /**
+    * Resets 'sequences' to an empty sequence (containing a single 'Do nothing' sequence)
+    */
+   private void generateEmptySequence() {
+      sequences = new ArrayList<>();
+      sequences.add(new AnalysisSequence("Do nothing"));
+      saveToFile();
    }
 
-   private ArrayList<AnalysisSequence> generateEmptySequence() {
-      ArrayList<AnalysisSequence> temp = new ArrayList<>();
-      temp.add(new AnalysisSequence("Do nothing"));
-      return temp;
-   }
-
+   /**
+    * This method verifies the types of parameters after Gson loads them from a json file.
+    * Gson loads every number as Double, but some methods require casting to Integer, which Java
+    * cannot do implicitly. Hence, we need to explicitly cast Double instances to Integer
+    * instances where required.
+    */
    private void verifyParameters() {
       for (AnalysisSequence seq : sequences) {
          for (AnalysisStep step : seq.steps) {
             if (!step.hasParameters()) {
                continue;
             }
+            step.isBinary = ImageAnalysis.binaryMethods.contains(step.method);
             for (AnalysisParameter parameter : step.parameters) {
                if (parameter.getType() == AnalysisParameter.ParameterType.INTEGER) {
                   parameter.setValue(((Double) parameter.getValue()).intValue());
                }
             }
-            step.isBinary = ImageAnalysis.binaryMethods.contains(step.method);
          }
-         seq.updateReferences();
       }
    }
 
-   private ArrayList<AnalysisSequence> loadFromFile(String path) {
+   /**
+    * Loads sequences from file. If no file can be found, or an exception is thrown, it loads an
+    * empty sequence instead.
+    *
+    * @param path Path to json with sequences
+    */
+   private void loadFromFile(String path) {
       File file = new File(path);
       if (!file.exists()) {
-         return null;
+         generateEmptySequence();
+         return;
       }
 
       StringBuilder contents = new StringBuilder();
@@ -86,33 +114,41 @@ public class AnalysisManager {
          }
       } catch (Exception e) {
          studio.getLogManager().logError(e);
-         return null;
+         generateEmptySequence();
+         return;
       }
 
       // Defining correct type for Gson to read (ArrayList<AnalysisSequence>) is unstable
       // in Gson. Instead, read as immutable array, and use that to initialize the mutable
       // list.
-      Gson gson = new Gson();
-      gson = new GsonBuilder()
+      Gson gson = new GsonBuilder()
             .setPrettyPrinting()
             .create();
       if (contents.toString().isEmpty()) {
-         return null;
+         generateEmptySequence();
+         return;
       }
       AnalysisSequence[] temp = gson.fromJson(contents.toString(), AnalysisSequence[].class);
-      ArrayList<AnalysisSequence> analysisSequences = new ArrayList<>(Arrays.asList(temp));
-      return analysisSequences;
+      sequences = new ArrayList<>(Arrays.asList(temp));
    }
 
-   private HashSet<String> getSequenceNames() {
-      HashSet<String> temp = new HashSet<>();
+   /**
+    * Returns a list of sequence names.
+    *
+    * @return
+    */
+   public ArrayList<String> getSequenceNames() {
+      ArrayList<String> temp = new ArrayList<>();
       for (AnalysisSequence seq : sequences) {
          temp.add(seq.sequenceName);
       }
       return temp;
    }
 
-   public void saveToFile() {
+   /**
+    * Saves ArrayList of sequences to a json file using Gson.
+    */
+   private void saveToFile() {
       File file = new File("AnalysisSequences.json");
       // Delete existing file
       if (file.exists()) {
@@ -135,6 +171,10 @@ public class AnalysisManager {
       }
 
       String content = gson.toJson(sequences);
+      if (Objects.equals(content, "null")) {
+         studio.getLogManager().logMessage("Could not serialize sequences.");
+         return;
+      }
       try (BufferedWriter writer = new BufferedWriter(new FileWriter("AnalysisSequences.json"))) {
          writer.write(content);
       } catch (Exception e) {
@@ -143,6 +183,13 @@ public class AnalysisManager {
       }
    }
 
+   /**
+    * Appends sequence to list of sequences.
+    *
+    * @param seq AnalysisSequence to be appended.
+    *
+    * @return Boolean flag indicating success (true == success, false == fail)
+    */
    public boolean addSequence(AnalysisSequence seq) {
       if (sequenceNames.contains(seq.sequenceName)) {
          studio.alerts().postAlert("Sequence Manager alert", null, "Sequence name already exists.");
@@ -154,10 +201,18 @@ public class AnalysisManager {
          return false;
       }
       this.sequences.add(seq);
-      support.firePropertyChange("AnalysisManager", null, this);
+      saveToFile();
+      eventHandler.firePropertyChange("Sequence list changed", this, null, null);
       return true;
    }
 
+   /**
+    * Removes sequence from list of sequences
+    *
+    * @param idx Index of sequence to be removed
+    *
+    * @return Boolean flag indicating success (true == success, false == fail)
+    */
    public boolean removeSequence(int idx) {
       if (idx < 0) {
          studio.alerts().postAlert("Sequence Manager alert.", null, "New sequence cannot be "
@@ -169,26 +224,19 @@ public class AnalysisManager {
          return false;
       }
       this.sequences.remove(idx);
-      support.firePropertyChange("AnalysisManager", null, this);
+      saveToFile();
+      eventHandler.firePropertyChange("Sequence list changed", this, null, null);
       return true;
    }
 
-   public ArrayList<AnalysisSequence> getSequences() {
-      return sequences;
-   }
-
-   public AnalysisSequence getSequence(int i) {
-      return sequences.get(i);
-   }
-
-   public AnalysisSequence getCurrentSequence() {
-      return currentSequence;
-   }
-
-   public void setCurrentSequence(int i) {
-      currentSequence = sequences.get(i);
-   }
-
+   /**
+    * Overwrites sequence at index i with AnalysisSequence seq
+    *
+    * @param i   Index of sequence to be overwritten
+    * @param seq Analysis sequence to be added
+    *
+    * @return Boolean flag indicating success (true == success, false == fail)
+    */
    public boolean setSequence(int i, AnalysisSequence seq) {
       if (sequenceNames.contains(seq.sequenceName)
             && !Objects.equals(sequences.get(i).sequenceName, seq.sequenceName)) {
@@ -201,40 +249,50 @@ public class AnalysisManager {
          return false;
       }
       sequences.set(i, seq);
-      support.firePropertyChange("AnalysisManager", null, this);
+      saveToFile();
+      eventHandler.firePropertyChange("Sequence list changed", this, null, null);
       return true;
    }
 
+   // TODO: Should we return a copy (which will be inaccessible, and thus immutable) ?
+
+   /**
+    * Getter for AnalysisSequence from list
+    *
+    * @param i Index of sequence to be retrieved
+    *
+    * @return AnalysisSequence requested
+    *
+    * @throws ArrayIndexOutOfBoundsException when i is out of bounds with respect to the
+    *                                        sequences array.
+    */
+   public AnalysisSequence getSequence(int i) {
+      return sequences.get(i);
+   }
+
+   /**
+    * Get size of sequences list
+    *
+    * @return Number of sequences in list
+    */
    public int size() {
       return sequences.size();
    }
 
-   public ArrayList<int[]> getImageStack(int[] src, int width, int height) {
-      ArrayList<int[]> imgs = new ArrayList<>();
-      int[] img = src.clone();
-      imgs.add(img.clone());
-      for (int i = 0; i < currentSequence.steps.size(); i++) {
-         if (currentSequence.references.containsKey(i)) {
-            for (int forward : currentSequence.references.get(i)) {
-               currentSequence.steps.get(forward).img = img.clone();
-            }
-         }
-         imgs.add(currentSequence.steps.get(i).executeStep(img, width, height, true).clone());
+   /**
+    * ImageAnalysisEventHandler calls this method when an event is fired.
+    *
+    * @param evt A PropertyChangeEvent object describing the event source
+    *            and the property that has changed.
+    */
+   @Override
+   public void propertyChange(PropertyChangeEvent evt) {
+      switch (evt.getPropertyName()) {
+         case "Closing":
+            saveToFile();
+            break;
+         default:
+            break;
       }
-      return imgs;
-   }
-
-   public int[] analyze(int[] src, int width, int height) {
-      currentSequence.execute(src, width, height);
-      return src;
-   }
-
-   public void setParameterValue(AnalysisParameter parameter, Object value) {
-      if (parameter.getValue() == value) {
-         return;
-      }
-      parameter.setValue(value);
-      currentSequence.updateReferences();
-      support.firePropertyChange("Parameter changed", null, value);
    }
 }

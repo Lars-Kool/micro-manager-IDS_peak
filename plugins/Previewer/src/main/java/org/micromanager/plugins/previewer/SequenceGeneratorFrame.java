@@ -55,7 +55,6 @@ public class SequenceGeneratorFrame extends JFrame {
       deleteButton = new JButton("Delete");
       deleteButton.addActionListener(e -> {
          if (analysisManager.removeSequence(idx)) {
-            analysisManager.saveToFile();
             this.dispose();
          }
       });
@@ -70,7 +69,6 @@ public class SequenceGeneratorFrame extends JFrame {
          updateName();
          updateForwardReferences();
          if (analysisManager.setSequence(idx, sequence)) {
-            analysisManager.saveToFile();
             this.dispose();
          }
       });
@@ -80,7 +78,6 @@ public class SequenceGeneratorFrame extends JFrame {
          updateName();
          updateForwardReferences();
          if (analysisManager.addSequence(sequence)) {
-            analysisManager.saveToFile();
             this.dispose();
          }
       });
