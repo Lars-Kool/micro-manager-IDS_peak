@@ -6,6 +6,26 @@ import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.List;
 
+/*
+   Events:
+   - Parameter changed: AnalysisParameter changed value
+      source: AnalysisParameter that changed value
+      oldValue: previous value
+      newValue: updated value
+   - Step changed: One of the parameters of this step changed
+      source: AnalysisStep that changed
+      oldValue: null
+      newValue: null
+   - Sequence changed: One of the steps in this sequence changed
+      source: AnalysisSequence that changed
+      oldValue: null
+      newValue: null
+   - Sequence list changed: AnalysisManager updated the list of sequences
+      source: AnalysisManager
+      oldValue: null
+      newValue: null
+ */
+
 /**
  * Singleton class that handles events for the RT Image Analysis package
  */

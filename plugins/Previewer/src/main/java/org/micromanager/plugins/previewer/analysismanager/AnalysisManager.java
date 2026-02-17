@@ -39,7 +39,7 @@ public class AnalysisManager implements PropertyChangeListener {
             .setPrettyPrinting()
             .create();
       sequences = new ArrayList<>();
-      sequences = loadFromFile("AnalysisSequences.json");
+      loadFromFile("AnalysisSequences.json");
       if (sequences == null) {
          generateEmptySequence();
       }
