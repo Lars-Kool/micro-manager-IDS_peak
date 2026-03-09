@@ -18,12 +18,10 @@ public class SequencerFrame extends JFrame {
    private final Studio studio;
    private final SequenceManager sequenceManager;
    BuilderPanel builderPanel;
-   JLabel sequenceLabel;
    JComboBox<String> sequenceCombobox;
    JButton newSequenceButton;
    JButton saveSequenceButton;
    JButton deleteSequenceButton;
-   JLabel sequenceNameLabel;
    JTextField sequenceNameTextField;
    private Sequence currSequence;
 
@@ -33,9 +31,11 @@ public class SequencerFrame extends JFrame {
       this.studio = studio;
 
       sequenceManager = new SequenceManager(studio);
-      currSequence = sequenceManager.getSequence(sequenceManager.getSequenceNames()[0]);
-
-      sequenceLabel = new JLabel("Sequence: ");
+      sequenceCombobox = new JComboBox<>(sequenceManager.getSequenceNames());
+      sequenceCombobox.addActionListener(e -> {
+         currSequence = sequenceManager.getSequence((String) sequenceCombobox.getSelectedItem());
+      });
+      currSequence = sequenceManager.getSequence((String) sequenceCombobox.getSelectedItem());
 
 
       newSequenceButton = new JButton("New");
@@ -99,7 +99,6 @@ public class SequencerFrame extends JFrame {
          redraw();
       });
 
-      sequenceNameLabel = new JLabel("Name: ");
       sequenceNameTextField = new JTextField(currSequence.sequenceName);
       sequenceNameTextField.setColumns(15);
 
@@ -146,13 +145,13 @@ public class SequencerFrame extends JFrame {
    private void redraw() {
       this.getContentPane().removeAll();
 
-      this.add(sequenceLabel, "split");
+      this.add(new JLabel("Sequence: "), "split");
       this.add(sequenceCombobox, "split");
       this.add(newSequenceButton, "split");
       this.add(saveSequenceButton, "split");
       this.add(deleteSequenceButton, "wrap");
 
-      this.add(sequenceNameLabel, "split");
+      this.add(new JLabel("Name: "), "split");
       this.add(sequenceNameTextField, "wrap");
 
       this.add(builderPanel);

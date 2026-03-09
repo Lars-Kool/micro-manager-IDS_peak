@@ -3,6 +3,7 @@ package org.micromanager.plugins.fluidicsequencer.sequencebuilder;
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
 import java.text.NumberFormat;
+import java.util.ArrayList;
 import javax.swing.JButton;
 import javax.swing.JComboBox;
 import javax.swing.JFormattedTextField;
@@ -19,6 +20,8 @@ public class ActionPanel extends JPanel {
    private static final String[] flowrateUnits = new String[] {"uL_s", "uL_m", "uL_h", "mL_s",
          "mL_m", "mL_h"};
    private static final String[] durationUnits = new String[] {"s", "m", "h"};
+   private final SequencerEventHandler eventHandler;
+
    private final SequenceAction action;
    private final JButton addButton;
    private final JButton removeButton;
@@ -26,6 +29,7 @@ public class ActionPanel extends JPanel {
    private final JButton downButton;
    private final JLabel deviceLabel;
    private final JComboBox<String> devicesDropdown;
+   private final JComboBox<String> startDropdown;
    private final JLabel valueLabel;
    private final JFormattedTextField valueTextField;
    private final JComboBox<String> pressureUnitDropdown;
@@ -34,23 +38,37 @@ public class ActionPanel extends JPanel {
    private final JFormattedTextField durationTextField;
    private final JComboBox<String> durationUnitDropdown;
 
-   public ActionPanel(BuilderPanel parent, String[] deviceNames, ActionType[] deviceActions) {
-      this(parent, new SequenceAction("Wait", ActionType.WAIT), deviceNames, deviceActions);
+   public ActionPanel(String[] deviceNames, ActionType[] deviceActions) {
+      this(new SequenceAction("Wait", ActionType.WAIT), deviceNames, deviceActions);
    }
 
-   public ActionPanel(BuilderPanel parent, SequenceAction action, String[] deviceNames,
-                      ActionType[] deviceActions) {
+   public ActionPanel(SequenceAction action, String[] deviceNames, ActionType[] deviceActions) {
       this.setLayout(new MigLayout("insets 2"));
+      this.eventHandler = SequencerEventHandler.getInstance();
 
       this.action = action;
       addButton = new JButton("+");
-      addButton.addActionListener(e -> parent.addItem(this));
+      addButton.addActionListener(e -> {
+         eventHandler.firePropertyChange("Add action", this, null, null);
+      });
       removeButton = new JButton("-");
-      removeButton.addActionListener(e -> parent.removeItem(this));
+      removeButton.addActionListener(e -> {
+         eventHandler.firePropertyChange("Remove action", this, null, null);
+      });
       upButton = new JButton("^");
-      upButton.addActionListener(e -> parent.moveUp(this));
+      upButton.addActionListener(e -> {
+         eventHandler.firePropertyChange("Move up action", this, null, null);
+      });
       downButton = new JButton("v");
-      downButton.addActionListener(e -> parent.moveDown(this));
+      downButton.addActionListener(e -> {
+         eventHandler.firePropertyChange("Move down action", this, null, null);
+      });
+
+      ArrayList<String> startNames = new ArrayList<>();
+      for (StartType type : StartType.values()) {
+         startNames.add(type.label);
+      }
+      startDropdown = new JComboBox<>(startNames.toArray(new String[0]));
 
       deviceLabel = new JLabel("Device:");
       devicesDropdown = new JComboBox<>(deviceNames);
@@ -59,12 +77,10 @@ public class ActionPanel extends JPanel {
       devicesDropdown.addActionListener(e -> {
          action.deviceName = (String) devicesDropdown.getSelectedItem();
          int idx = devicesDropdown.getSelectedIndex();
-         action.type = deviceActions[idx];
+         action.actionType = deviceActions[idx];
          setActionLabelText();
          redraw();
-         parent.modifiedSinceLastSave = true;
       });
-      setActionLabelText();
 
       NumberFormat format = NumberFormat.getNumberInstance();
       format.setMinimumIntegerDigits(1);
@@ -72,6 +88,7 @@ public class ActionPanel extends JPanel {
       NumberFormatter formatter = new NumberFormatter(format);
 
       valueLabel = new JLabel();
+      setActionLabelText();
       valueTextField = new JFormattedTextField(formatter);
       valueTextField.setColumns(8);
       valueTextField.setValue(action.value);
@@ -80,7 +97,7 @@ public class ActionPanel extends JPanel {
          public void keyPressed(KeyEvent e) {
             if (e.getKeyCode() == KeyEvent.VK_ENTER) {
                action.value = (Double) valueTextField.getValue();
-               parent.modifiedSinceLastSave = true;
+               eventHandler.firePropertyChange("Action value changed", this, null, null);
             }
          }
       });
@@ -89,14 +106,14 @@ public class ActionPanel extends JPanel {
       pressureUnitDropdown.setSelectedItem("kPa");
       pressureUnitDropdown.addActionListener(e -> {
          action.valueUnit = ValueUnit.valueOf((String) pressureUnitDropdown.getSelectedItem());
-         parent.modifiedSinceLastSave = true;
+         eventHandler.firePropertyChange("Action value changed", this, null, null);
       });
 
       flowrateUnitDropdown = new JComboBox<>(flowrateUnits);
       flowrateUnitDropdown.setSelectedItem("uL_s");
       flowrateUnitDropdown.addActionListener(e -> {
          action.valueUnit = ValueUnit.valueOf((String) flowrateUnitDropdown.getSelectedItem());
-         parent.modifiedSinceLastSave = true;
+         eventHandler.firePropertyChange("Action value changed", this, null, null);
       });
 
       durationLabel = new JLabel("Duration:");
@@ -108,7 +125,7 @@ public class ActionPanel extends JPanel {
          public void keyPressed(KeyEvent e) {
             if (e.getKeyCode() == KeyEvent.VK_ENTER) {
                action.duration = (Double) durationTextField.getValue();
-               parent.modifiedSinceLastSave = true;
+               eventHandler.firePropertyChange("Action value changed", this, null, null);
             }
          }
       });
@@ -118,13 +135,13 @@ public class ActionPanel extends JPanel {
       durationUnitDropdown.addActionListener(e -> {
          action.durationUnit =
                DurationUnit.valueOf((String) durationUnitDropdown.getSelectedItem());
-         parent.modifiedSinceLastSave = true;
+         eventHandler.firePropertyChange("Action value changed", this, null, null);
       });
       redraw();
    }
 
    private void setActionLabelText() {
-      switch (action.type) {
+      switch (action.actionType) {
          case SET_PRESSURE:
             valueLabel.setText("Set pressure (kPa):");
             break;
@@ -150,10 +167,12 @@ public class ActionPanel extends JPanel {
       this.add(deviceLabel);
       this.add(devicesDropdown);
 
-      if (action.type != ActionType.WAIT) {
+      this.add(startDropdown);
+
+      if (action.actionType != ActionType.WAIT) {
          this.add(valueLabel);
          this.add(valueTextField);
-         if (action.type == ActionType.SET_PRESSURE) {
+         if (action.actionType == ActionType.SET_PRESSURE) {
             this.add(pressureUnitDropdown);
          } else {
             this.add(flowrateUnitDropdown);

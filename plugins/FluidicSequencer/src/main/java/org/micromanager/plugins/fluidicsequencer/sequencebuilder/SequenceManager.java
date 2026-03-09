@@ -17,7 +17,6 @@ public class SequenceManager {
    private final Gson gson;
    private final String savePath;
    private Map<String, Sequence> sequences;
-   private final String currentSequence;
 
    public SequenceManager(Studio studio) {
       this.studio = studio;
@@ -28,7 +27,6 @@ public class SequenceManager {
       if (sequences == null) {
          generateEmptySequence();
       }
-      currentSequence = sequences.values().iterator().next().sequenceName;
    }
 
    public boolean sequenceNameExists(String name) {

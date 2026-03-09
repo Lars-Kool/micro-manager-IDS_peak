@@ -1,6 +1,9 @@
 package org.micromanager.plugins.fluidicsequencer.sequencebuilder;
 
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
 import java.util.ArrayList;
+import javax.swing.BorderFactory;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
 import javax.swing.SwingUtilities;
@@ -8,8 +11,9 @@ import mmcorej.DeviceType;
 import net.miginfocom.swing.MigLayout;
 import org.micromanager.Studio;
 
-public class BuilderPanel extends JPanel {
+public class BuilderPanel extends JPanel implements PropertyChangeListener {
    private final Studio studio;
+   private final SequencerEventHandler eventHandler;
    private final ArrayList<ActionPanel> actionPanels;
    private final Sequence sequence;
    protected boolean modifiedSinceLastSave;
@@ -21,11 +25,13 @@ public class BuilderPanel extends JPanel {
       this.studio = studio;
       this.sequence = sequence;
       this.modifiedSinceLastSave = false;
+      this.setBorder(BorderFactory.createEmptyBorder());
+      this.eventHandler = SequencerEventHandler.getInstance();
 
       updateDevices();
       actionPanels = new ArrayList<>();
       for (SequenceAction action : sequence.actions) {
-         actionPanels.add(new ActionPanel(this, action, deviceNames, deviceActions));
+         actionPanels.add(new ActionPanel(action, deviceNames, deviceActions));
       }
       redraw();
    }
@@ -62,7 +68,7 @@ public class BuilderPanel extends JPanel {
 
    protected void addItem(ActionPanel actionPanel) {
       int i = actionPanels.indexOf(actionPanel);
-      actionPanels.add(i + 1, new ActionPanel(this, deviceNames, deviceActions));
+      actionPanels.add(i + 1, new ActionPanel(deviceNames, deviceActions));
       updateSequence();
       redraw();
    }
@@ -70,7 +76,7 @@ public class BuilderPanel extends JPanel {
    protected void removeItem(ActionPanel actionPanel) {
       actionPanels.remove(actionPanel);
       if (actionPanels.isEmpty()) {
-         actionPanels.add(new ActionPanel(this, deviceNames, deviceActions));
+         actionPanels.add(new ActionPanel(deviceNames, deviceActions));
       }
       updateSequence();
       redraw();
@@ -121,6 +127,32 @@ public class BuilderPanel extends JPanel {
       JFrame frame = (JFrame) SwingUtilities.getWindowAncestor(this);
       if (frame != null) {
          frame.pack();
+      }
+   }
+
+   @Override
+   public void propertyChange(PropertyChangeEvent evt) {
+      switch (evt.getPropertyName()) {
+         case "Add action":
+            addItem((ActionPanel) evt.getSource());
+            modifiedSinceLastSave = true;
+            break;
+         case "Remove action":
+            removeItem((ActionPanel) evt.getSource());
+            modifiedSinceLastSave = true;
+            break;
+         case "Move up action":
+            moveUp((ActionPanel) evt.getSource());
+            modifiedSinceLastSave = true;
+            break;
+         case "Move down action":
+            moveDown((ActionPanel) evt.getSource());
+            modifiedSinceLastSave = true;
+            break;
+         case "Action value changed":
+            modifiedSinceLastSave = true;
+         default:
+            break;
       }
    }
 }
