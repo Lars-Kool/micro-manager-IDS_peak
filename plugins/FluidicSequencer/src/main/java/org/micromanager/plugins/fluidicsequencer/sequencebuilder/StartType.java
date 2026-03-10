@@ -9,7 +9,6 @@ public enum StartType {
    AFTER_PREVIOUS("After previous"),
    @SerializedName("OnClick")
    ON_CLICK("On click");
-   @SerializedName("On condition")
 
    public final String label;
 
