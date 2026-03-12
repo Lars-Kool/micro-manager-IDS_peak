@@ -10,6 +10,7 @@ import javax.swing.SwingUtilities;
 import mmcorej.DeviceType;
 import net.miginfocom.swing.MigLayout;
 import org.micromanager.Studio;
+import org.micromanager.plugins.fluidicsequencer.sequencebuilder.panels.ActionPanel;
 
 public class BuilderPanel extends JPanel implements PropertyChangeListener {
    private final Studio studio;
@@ -30,8 +31,9 @@ public class BuilderPanel extends JPanel implements PropertyChangeListener {
 
       updateDevices();
       actionPanels = new ArrayList<>();
-      for (SequenceAction action : sequence.actions) {
-         actionPanels.add(new ActionPanel(action, deviceNames, deviceActions));
+      // for (SequenceAction action : sequence.actions) {
+      for (int i = 0; i < sequence.actions.size(); i++) {
+         actionPanels.add(new ActionPanel(i, sequence.actions.get(i), deviceNames, deviceActions));
       }
       redraw();
    }

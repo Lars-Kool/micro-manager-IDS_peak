@@ -12,27 +12,27 @@ public class ActionWaitPanel extends JPanel {
    private final JLabel waitLabel;
    private final JFormattedTextField timeField;
    private final JComboBox<String> unitDropdown;
-   private JumpPanel jumpPanel;
 
-   public ActionWaitPanel(int nSteps) {
-      this(0, nSteps, nSteps);
+   public ActionWaitPanel() {
+      this(0, "s");
    }
 
-   public ActionWaitPanel(double time, int nextStep, int nSteps) {
+   public ActionWaitPanel(double time, String unit) {
       this.setLayout(new MigLayout("insets 2"));
 
       waitLabel = new JLabel("Wait for: ");
       timeField = new JFormattedTextField();
       timeField.setFormatterFactory(new AbstractFormatterFactory());
+      timeField.setValue(time);
       unitDropdown = new JComboBox<>(new String[] {"s", "m", "h"});
-      jumpPanel = new JumpPanel("Next step: ", nextStep, nSteps);
+      unitDropdown.setSelectedItem(unit);
       redraw();
    }
 
    private void redraw() {
+      this.removeAll();
       this.add(waitLabel);
       this.add(timeField);
       this.add(unitDropdown);
-      this.add(jumpPanel);
    }
 }
