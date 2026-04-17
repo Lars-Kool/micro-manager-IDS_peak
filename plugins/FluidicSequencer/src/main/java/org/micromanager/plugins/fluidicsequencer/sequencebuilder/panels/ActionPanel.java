@@ -1,25 +1,15 @@
 package org.micromanager.plugins.fluidicsequencer.sequencebuilder.panels;
 
-import java.awt.event.KeyAdapter;
-import java.awt.event.KeyEvent;
-import java.text.NumberFormat;
-import java.util.ArrayList;
 import java.util.Objects;
 import javax.swing.JButton;
 import javax.swing.JComboBox;
-import javax.swing.JFormattedTextField;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.SwingUtilities;
-import javax.swing.text.NumberFormatter;
 import net.miginfocom.swing.MigLayout;
-import org.micromanager.plugins.fluidicsequencer.sequencebuilder.ActionType;
-import org.micromanager.plugins.fluidicsequencer.sequencebuilder.DurationUnit;
 import org.micromanager.plugins.fluidicsequencer.sequencebuilder.SequenceAction;
-import org.micromanager.plugins.fluidicsequencer.sequencebuilder.SequencerEventHandler;
-import org.micromanager.plugins.fluidicsequencer.sequencebuilder.StartType;
-import org.micromanager.plugins.fluidicsequencer.sequencebuilder.ValueUnit;
+import org.micromanager.plugins.fluidicsequencer.fluidicsequence.SequencerEventHandler;
 
 public class ActionPanel extends JPanel {
    private static final String[] pressurUnits = new String[] {"Pa", "kPa", "hPa", "bar", "mbar",

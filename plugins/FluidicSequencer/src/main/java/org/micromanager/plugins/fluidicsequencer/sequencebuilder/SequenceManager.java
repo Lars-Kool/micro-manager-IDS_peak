@@ -11,6 +11,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Scanner;
 import org.micromanager.Studio;
+import org.micromanager.plugins.fluidicsequencer.fluidicsequence.Sequence;
 
 public class SequenceManager {
    private final Studio studio;

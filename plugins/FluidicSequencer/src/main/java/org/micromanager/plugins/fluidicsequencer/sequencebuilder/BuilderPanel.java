@@ -10,6 +10,8 @@ import javax.swing.SwingUtilities;
 import mmcorej.DeviceType;
 import net.miginfocom.swing.MigLayout;
 import org.micromanager.Studio;
+import org.micromanager.plugins.fluidicsequencer.fluidicsequence.Sequence;
+import org.micromanager.plugins.fluidicsequencer.fluidicsequence.SequencerEventHandler;
 import org.micromanager.plugins.fluidicsequencer.sequencebuilder.panels.ActionPanel;
 
 public class BuilderPanel extends JPanel implements PropertyChangeListener {

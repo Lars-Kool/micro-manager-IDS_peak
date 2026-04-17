@@ -1,4 +1,4 @@
-package org.micromanager.plugins.fluidicsequencer.sequencebuilder;
+package org.micromanager.plugins.fluidicsequencer.fluidicsequence;
 
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
@@ -8,6 +8,26 @@ import java.util.List;
 
 /*
    Events:
+   - "SET_COUNTER": Set counter to specific value
+      source: StepCounter
+      data: Pair<String, Integer>
+         - Name of counter to be set
+         - Value of counter to be set
+   - "INCREMENT_COUNTER": Increment counter with specific value
+      source: StepCounter
+      data: Pair<String, Integer>
+         - Name of counter to be modified
+         - Value to be added
+   - "DECREMENT_COUNTER": Decrement counter with specific value
+      source: StepCounter
+      data: Pair<String, Integer>
+         - Name of counter to be modified
+         - Value to be subtracted
+   - "StepFinished": Indicator that SequenceStep has been executed
+      source: SequenceStep
+      data: null or Integer
+         - Index of next step, null if step index should be incremented by 1
+
    - Parameter changed: AnalysisParameter changed value
       source: AnalysisParameter that changed value
       oldValue: previous value
@@ -75,11 +95,10 @@ public class SequencerEventHandler {
     *
     * @param name     Name of event, main way to check if event is relevant
     * @param source   Object firing the event. Allows to act only on relevent objects
-    * @param oldValue Value to be replaced (can be null)
-    * @param newValue New value (can be null)
+    * @param data     Data to be passed (can be null)
     */
-   public void firePropertyChange(String name, Object source, Object oldValue, Object newValue) {
-      PropertyChangeEvent pce = new PropertyChangeEvent(source, name, oldValue, newValue);
+   public void firePropertyChange(String name, Object source, Object data) {
+      PropertyChangeEvent pce = new PropertyChangeEvent(source, name, null, data);
       for (int i = 0; i < listeners.size(); i++) {
          PropertyChangeListener pcl = listeners.get(i).get();
          if (pcl != null) {

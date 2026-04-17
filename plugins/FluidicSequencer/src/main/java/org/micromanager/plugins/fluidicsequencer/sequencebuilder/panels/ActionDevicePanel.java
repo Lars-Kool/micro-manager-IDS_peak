@@ -1,8 +1,5 @@
 package org.micromanager.plugins.fluidicsequencer.sequencebuilder.panels;
 
-import java.beans.PropertyChangeEvent;
-import java.beans.PropertyChangeListener;
-import java.util.ArrayList;
 import java.util.Objects;
 import javax.swing.JComboBox;
 import javax.swing.JFormattedTextField;
@@ -10,7 +7,6 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import net.miginfocom.swing.MigLayout;
 import org.micromanager.plugins.dropletcontrol.AbstractFormatterFactory;
-import org.micromanager.plugins.fluidicsequencer.sequencebuilder.SequencerEventHandler;
 
 public class ActionDevicePanel extends JPanel {
    private final JComboBox<String> devicesDropdown;

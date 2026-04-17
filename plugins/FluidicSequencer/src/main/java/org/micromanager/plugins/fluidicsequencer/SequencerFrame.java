@@ -11,7 +11,7 @@ import net.miginfocom.swing.MigLayout;
 import org.micromanager.Studio;
 import org.micromanager.internal.utils.WindowPositioning;
 import org.micromanager.plugins.fluidicsequencer.sequencebuilder.BuilderPanel;
-import org.micromanager.plugins.fluidicsequencer.sequencebuilder.Sequence;
+import org.micromanager.plugins.fluidicsequencer.fluidicsequence.Sequence;
 import org.micromanager.plugins.fluidicsequencer.sequencebuilder.SequenceManager;
 
 public class SequencerFrame extends JFrame {
